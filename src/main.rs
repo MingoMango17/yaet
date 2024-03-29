@@ -32,6 +32,11 @@ This prototype tool is intended solely for educational purposes within the CMSC 
 struct Cli {
     #[command(subcommand)]
     param: Params,
+
+    /// Enable debug prints
+    ///
+    #[arg(long)]
+    debug: bool,
 }
 
 /// Parameters for different operations (Encrypt/Decrypt/Setup).
@@ -211,8 +216,10 @@ struct Setup {
     generate: bool,
 }
 
+
 fn main() {
     let args: Cli = Cli::parse();
+
 
     match args.param {
         Params::Configure(configure_args) => {
@@ -221,9 +228,11 @@ fn main() {
             let delete_all = setup_args.delete_all;
             let add_host = setup_args.add_host;
 
-            println!("Hosts: {:#?}", add_host);
-            println!("Delete All: {}", delete_all);
-            println!("Generate: {}", generate);
+            if args.debug {
+                println!("Hosts: {:#?}", add_host);
+                println!("Delete All: {}", delete_all);
+                println!("Generate: {}", generate);
+            }
         }
         Params::Encrypt(encrypt_args) => {
             let file = encrypt_args.file;
@@ -231,10 +240,12 @@ fn main() {
             let recipient = encrypt_args.recipient;
             let skip_verification = encrypt_args.skip_verification;
 
-            println!("FILE: {:#?}", file.unwrap());
-            println!("PEM: {:#?}", pem);
-            println!("RECIPIENT: {:#?}", recipient);
-            println!("Skip Verification: {:#?}", skip_verification);
+            if args.debug {
+                println!("FILE: {:#?}", file.unwrap());
+                println!("PEM: {:#?}", pem);
+                println!("RECIPIENT: {:#?}", recipient);
+                println!("Skip Verification: {:#?}", skip_verification);
+            }
         }
         Params::Decrypt(decrypt_args) => {
             let file = decrypt_args.file;
@@ -242,15 +253,12 @@ fn main() {
             let signature = decrypt_args.signature;
             let skip_verification = decrypt_args.skip_verification;
 
-            println!("FILE: {:#?}", file.unwrap());
-            println!("PEM: {:#?}", pem);
-            println!("Signature: {:#?}", signature);
-            println!("Skip Verification: {:#?}", skip_verification);
-        }
-        _ => {
+            if args.debug {
+                println!("FILE: {:#?}", file.unwrap());
+                println!("PEM: {:#?}", pem);
+                println!("Signature: {:#?}", signature);
+                println!("Skip Verification: {:#?}", skip_verification);
+            }
         }
     }
-    // println!("{:#?}", args);
-    // println!("{:#?}", args.param.setup.delete_all);
-    // println!("{:#?}", args.param.setup.generate);
 }
