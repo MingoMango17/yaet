@@ -1,6 +1,6 @@
 # Yet Another Encryption Tool! (yaet)
 
-Yet Another Encryption Tool! (yaet) is a command-line tool designed for encrypting and decrypting messages using RSA-OAEP implementation with verification/authenticity.
+**Yet Another Encryption Tool!** (yaet) is a command-line tool designed for encrypting and decrypting messages using RSA-OAEP implementation with verification/authenticity.
 It provides a simple and secure way to protect sensitive data using asymmetric encryption.
 
 > [!WARNING]
