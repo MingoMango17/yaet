@@ -10,10 +10,10 @@ It provides a simple and secure way to protect sensitive data using asymmetric e
 
 ## Features
 
-- Generate new key pairs for encryption and signing.
-- Encrypt plaintext messages using RSA-OAEP encryption algorithm.
-- Decrypt ciphertext messages using RSA-OAEP decryption algorithm.
-- Verify the authenticity of encrypted messages through digital signatures.
+-[x] Generate new key pairs for encryption and signing.
+-[x] Encrypt plaintext messages using RSA-OAEP encryption algorithm.
+-[x] Decrypt ciphertext messages using RSA-OAEP decryption algorithm.
+-[x] Verify the authenticity of encrypted messages through digital signatures.
 
 ## Installation
 
