@@ -39,7 +39,7 @@ struct Cli {
     debug: bool,
 }
 
-/// Parameters for different operations (Encrypt/Decrypt/Setup).
+/// Commands for different operations (Encrypt/Decrypt/Setup).
 ///
 #[derive(Parser, Debug)]
 enum Params {
@@ -216,6 +216,23 @@ struct Setup {
     generate: bool,
 }
 
+   fn read_input(&self) -> Result<String, io::Error> {
+        match &self.file {
+            Some(file_path) => {
+                // Read input from file
+                let mut file = File::open(file_path)?;
+                let mut input = String::new();
+                file.read_to_string(&mut input)?;
+                Ok(input)
+            }
+            None => {
+                // Read input from stdin
+                let mut input = String::new();
+                io::stdin().read_to_string(&mut input)?;
+                Ok(input)
+            }
+        }
+    }
 
 fn main() {
     let args: Cli = Cli::parse();
