@@ -16,7 +16,7 @@ It provides a simple and secure way to protect sensitive data using asymmetric e
 - [x] Verify the authenticity of encrypted messages through digital signatures.
 - [ ] Can identify your mom
 
-## Installation
+## Building
 
 1. Clone the repository:
 ```sh

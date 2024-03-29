@@ -1,8 +1,8 @@
 use clap::{Args, Parser};
 use rsa::{Oaep, RsaPrivateKey, RsaPublicKey};
-use std::fs::File;
-use std::io::{self, Read};
 use std::path::PathBuf;
+
+mod utils;
 
 /// Command-line interface for Yet Another Encryption Tool.
 ///
@@ -40,6 +40,8 @@ struct Cli {
 }
 
 /// Commands for different operations (Encrypt/Decrypt/Setup).
+///
+/// Attach `--debug` before the subcommand to output debug prints.
 ///
 #[derive(Parser, Debug)]
 enum Params {
@@ -81,7 +83,8 @@ struct EncryptArgs {
     /// yaet encrypt ~/message.txt [...]
     /// ```
     ///
-    #[arg(required = true)]
+    // #[arg(required = true)]
+    #[arg()]
     file: Option<PathBuf>,
 
     /// Your identification key.
@@ -216,27 +219,8 @@ struct Setup {
     generate: bool,
 }
 
-   fn read_input(&self) -> Result<String, io::Error> {
-        match &self.file {
-            Some(file_path) => {
-                // Read input from file
-                let mut file = File::open(file_path)?;
-                let mut input = String::new();
-                file.read_to_string(&mut input)?;
-                Ok(input)
-            }
-            None => {
-                // Read input from stdin
-                let mut input = String::new();
-                io::stdin().read_to_string(&mut input)?;
-                Ok(input)
-            }
-        }
-    }
-
 fn main() {
     let args: Cli = Cli::parse();
-
 
     match args.param {
         Params::Configure(configure_args) => {
@@ -252,26 +236,26 @@ fn main() {
             }
         }
         Params::Encrypt(encrypt_args) => {
-            let file = encrypt_args.file;
-            let pem = encrypt_args.pem;
-            let recipient = encrypt_args.recipient;
-            let skip_verification = encrypt_args.skip_verification;
+            let message: String = utils::read_input(&encrypt_args.file).unwrap();
+            let pem: PathBuf = encrypt_args.pem;
+            let recipient: PathBuf = encrypt_args.recipient;
+            let skip_verification: bool = encrypt_args.skip_verification;
 
             if args.debug {
-                println!("FILE: {:#?}", file.unwrap());
+                println!("Message: {:#?}", message);
                 println!("PEM: {:#?}", pem);
                 println!("RECIPIENT: {:#?}", recipient);
                 println!("Skip Verification: {:#?}", skip_verification);
             }
         }
         Params::Decrypt(decrypt_args) => {
-            let file = decrypt_args.file;
-            let pem = decrypt_args.pem;
-            let signature = decrypt_args.signature;
-            let skip_verification = decrypt_args.skip_verification;
+            let message = decrypt_args.file;
+            let pem: PathBuf = decrypt_args.pem;
+            let signature: PathBuf = decrypt_args.signature;
+            let skip_verification: bool = decrypt_args.skip_verification;
 
             if args.debug {
-                println!("FILE: {:#?}", file.unwrap());
+                println!("Message: {:#?}", message.unwrap());
                 println!("PEM: {:#?}", pem);
                 println!("Signature: {:#?}", signature);
                 println!("Skip Verification: {:#?}", skip_verification);
