@@ -10,10 +10,11 @@ It provides a simple and secure way to protect sensitive data using asymmetric e
 
 ## Features
 
--[x] Generate new key pairs for encryption and signing.
--[x] Encrypt plaintext messages using RSA-OAEP encryption algorithm.
--[x] Decrypt ciphertext messages using RSA-OAEP decryption algorithm.
--[x] Verify the authenticity of encrypted messages through digital signatures.
+- [x] Generate new key pairs for encryption and signing.
+- [x] Encrypt plaintext messages using RSA-OAEP encryption algorithm.
+- [x] Decrypt ciphertext messages using RSA-OAEP decryption algorithm.
+- [x] Verify the authenticity of encrypted messages through digital signatures.
+- [ ] Can identify your mom
 
 ## Installation
 
@@ -51,3 +52,7 @@ Contributions are welcome! If you have any suggestions, bug reports, or feature 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Similar Projects
+
+- https://github.com/gebmecod/RSA-encryption - A quick and easy way to encrypt your data written in Python
