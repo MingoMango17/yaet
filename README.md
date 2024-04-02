@@ -56,3 +56,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Similar Projects
 
 - https://github.com/gebmecod/RSA-encryption - A quick and easy way to encrypt your data written in Python
+- https://github.com/sycasec/rsa_oaep - A more advanced set of features written in Python
