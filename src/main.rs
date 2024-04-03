@@ -1,5 +1,4 @@
-use clap::{Args, Parser,builder::PossibleValuesParser};
-use rsa::{Oaep, RsaPrivateKey, RsaPublicKey};
+use clap::{builder::PossibleValuesParser, Args, Parser};
 use std::path::PathBuf;
 
 mod utils;
@@ -58,7 +57,7 @@ enum Params {
 /// - Public encryption key of the receiver: Essential for encrypting the message securely for the intended recipient.
 ///
 #[derive(Parser, Debug)]
-#[command(about = "Encrypt a message")]
+#[command(about = "Encrypt a message", visible_alias = "enc")]
 struct EncryptArgs {
     /// Specifies the input file containing plaintext.
     ///
@@ -111,7 +110,7 @@ struct EncryptArgs {
 /// - Private encryption key: Used to decrypt the message.
 ///
 #[derive(Parser, Debug)]
-#[command(about = "Decrypt an encrypted message")]
+#[command(about = "Decrypt an encrypted message", visible_alias = "dec")]
 struct DecryptArgs {
     /// Specifies the input file containing ciphertext message.
     ///
@@ -168,7 +167,7 @@ struct ConfigureArgs {
     /// This will add a new host to your `~/.keys/.known_hosts` file.
     /// Use this argument multiple times to add multiple identification hosts.
     ///
-    #[arg(long, short = 'a', value_delimiter=',')]
+    #[arg(long, short = 'a', value_delimiter = ',')]
     add_host: Vec<String>,
 
     /// Deletes all key pairs.
@@ -185,13 +184,19 @@ struct ConfigureArgs {
 /// Each pair includes both a private and a public key.
 ///
 #[derive(Parser, Debug)]
-#[command(about = "Generate private and public keys")]
+#[command(about = "Generate private and public keys", visible_alias = "gen")]
 struct GenerateArgs {
-    /// Email address
-    #[arg(long, short = 'e', default_value = "")]
-    email: String,
+    /// Output file
+    #[arg(
+        long,
+        short = 'o',
+        required = true,
+        visible_alias = "out",
+        value_name = "FILE"
+    )]
+    output: PathBuf,
 
-    /// Key bits
+    /// Bit size
     #[arg(long, short = 'b', default_value = "2048", value_parser = PossibleValuesParser::new(["1024", "2048", "4096"]))]
     bits: String,
 }
@@ -211,7 +216,7 @@ fn main() {
         }
         Params::Encrypt(args) => {
             let message: String = utils::read_input(&args.file).unwrap();
-            let pem: PathBuf = args.pem;
+            let pem: PathBuf = args.pem; // probably not needed
             let recipient: PathBuf = args.recipient;
             let skip_verification: bool = args.skip_verification;
 
@@ -224,7 +229,7 @@ fn main() {
         }
         Params::Decrypt(args) => {
             let message: String = utils::read_input(&args.file).unwrap();
-            let pem: PathBuf = args.pem;
+            let pem: PathBuf = args.pem; // probably not needed
             let signature: PathBuf = args.signature;
             let skip_verification: bool = args.skip_verification;
 
@@ -236,11 +241,13 @@ fn main() {
             }
         }
         Params::Generate(args) => {
-            let email: String = args.email;
-            let bits: u32 = args.bits.parse().unwrap();
+            let output: PathBuf = args.output;
+            let bits: usize = args.bits.parse().unwrap();
+
+            utils::create_rsa_keys(&output, bits);
 
             if cli.debug {
-                println!("Email: {:#?}", email);
+                println!("Output: {:#?}", output);
                 println!("Bits: {:#?}", bits);
             }
         }
