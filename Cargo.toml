@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive", "cargo"] }
-rsa = "0.9.6"
+home = "0.5.9"
+rsa = { version = "0.9.6", features = ["sha2"] }
