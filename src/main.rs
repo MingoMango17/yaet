@@ -250,10 +250,11 @@ fn main() {
             }
 
             println!("Generating private and public RSA keys...");
-            let result = utils::generate_rsa_keys(&output, bits);
+            // let result = utils::generate_rsa_keys(&output, bits);
+            utils::generate_private_key(&output, bits);
+            utils::generate_public_key(&output);
 
             println!("Saved {:?}", output.as_path());
-
         }
     }
 }

@@ -1,6 +1,7 @@
+// use pkcs8::DecodePrivateKey;
 use rsa::{
-    pkcs8::EncodePrivateKey, pkcs8::EncodePublicKey, pkcs8::LineEnding, sha2::Sha256, Oaep,
-    RsaPrivateKey, RsaPublicKey,
+    pkcs8::DecodePrivateKey, pkcs8::EncodePrivateKey, pkcs8::EncodePublicKey, pkcs8::LineEnding,
+    sha2::Sha256, Oaep, RsaPrivateKey, RsaPublicKey,
 };
 use std::fs::File;
 use std::io::{self, Read};
@@ -24,24 +25,90 @@ pub fn read_input(file: &Option<PathBuf>) -> Result<String, io::Error> {
     }
 }
 
-/// Private and Public RSA keys generation
+/// Generate a Private RSA key
 ///
-/// Currently, this function can only export to PKCS#8 format.
+/// This function generates a private RSA key and saves it to the specified output file.
 ///
-pub fn generate_rsa_keys(output: &PathBuf, bits: usize) -> Result<(), std::io::Error> {
-    let mut rng = rand::thread_rng();
+/// # Arguments
+///
+/// * output - The path to the file where the private key will be saved.
+/// * bits - The number of bits for the RSA key.
+///
+/// # Errors
+///
+/// Returns an Err variant if there is an error generating the private key or if there
+/// is an error writing the key to the output file. The error may occur if the key cannot
+/// be generated or if there is an issue with file I/O operations.
+///
+/// # Examples
+///
+/// ```
+/// use std::path::PathBuf;
+/// let output_path = PathBuf::from("/path/to/private_key.pem");
+/// let bits = 2048; // Example key size
+/// if let Err(err) = generate_private_key(&output_path, bits) {
+///     eprintln!("Error generating private key: {}", err);
+/// }
+///  ```
+///
+pub fn generate_private_key(output: &PathBuf, bits: usize) -> Result<(), io::Error> {
+    let mut rng = rand::rngs::OsRng;
     let private_key = RsaPrivateKey::new(&mut rng, bits)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't
                                                                                           // be generated
     private_key.write_pkcs8_pem_file(output, LineEnding::default());
 
-    let public_key = RsaPublicKey::from(&private_key);
-    let output_pub: PathBuf = output.with_file_name(format!(
-        "{}.pub",
-        output.file_stem().unwrap().to_string_lossy()
-    ));
-    public_key.write_public_key_pem_file(output_pub, LineEnding::default());
     Ok(())
 }
 
-pub fn generate_signature_keys()
+/// Generate a Public RSA key
+///
+/// This function generates a public RSA key based on the provided private key file path.
+/// It reads the content of the private key file, extracts the private key, and then derives
+/// the corresponding public key. The generated public key is saved to a file with the same name
+/// as the private key file but with a .pub extension.
+///
+/// # Arguments
+///
+/// * private_key_path - The path to the private key file.
+///
+/// # Errors
+///
+/// Returns an Err variant if there is an error reading the private key file or if there
+/// is an error generating the public key. The error may occur if the private key file cannot
+/// be opened, if its content is invalid, or if the public key cannot be derived from the
+/// private key.
+///
+/// # Examples
+///
+/// ```
+/// use std::path::PathBuf;
+/// let private_key_path = PathBuf::from("/path/to/private_key.pem");
+/// if let Err(err) = generate_public_key(&private_key_path) {
+///     eprintln!("Error generating public key: {}", err);
+/// }
+/// ```
+///
+pub fn generate_public_key(private_key_path: &PathBuf) -> Result<(), io::Error> {
+    let mut private_key_file = File::open(private_key_path)?;
+    let mut private_key_content = String::new();
+    private_key_file.read_to_string(&mut private_key_content)?;
+
+    let private_key = RsaPrivateKey::from_pkcs8_pem(&private_key_content)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't
+                                                                                          // be generated
+    let public_key = RsaPublicKey::from(&private_key);
+
+    let output: PathBuf = private_key_path.with_file_name(format!(
+        "{}.pub",
+        private_key_path.file_stem().unwrap().to_string_lossy()
+    ));
+
+    public_key.write_public_key_pem_file(output, LineEnding::default()); // Save public key to file
+
+    Ok(())
+}
+
+pub fn create_signature(private_key: &PathBuf) -> Result<(), io::Error> {
+    Ok(())
+}
