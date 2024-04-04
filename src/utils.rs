@@ -1,5 +1,7 @@
-use rsa::{sha2::Sha256, Oaep, RsaPrivateKey, RsaPublicKey, pkcs8::EncodePrivateKey, pkcs8::LineEnding, pkcs8::EncodePublicKey};
-// use crate::utils::LineEnding;
+use rsa::{
+    pkcs8::EncodePrivateKey, pkcs8::EncodePublicKey, pkcs8::LineEnding, sha2::Sha256, Oaep,
+    RsaPrivateKey, RsaPublicKey,
+};
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -24,10 +26,19 @@ pub fn read_input(file: &Option<PathBuf>) -> Result<String, io::Error> {
 
 pub fn create_rsa_keys(output: &PathBuf, bits: usize) -> Result<(), io::Error> {
     let mut rng = rand::thread_rng();
-    let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
-    let public_key = RsaPublicKey::from(&private_key);
+    match RsaPrivateKey::new(&mut rng, bits) {
+        Ok(private_key) => {
+            private_key.write_pkcs8_pem_file(output, LineEnding::default());
+            let public_key = RsaPublicKey::from(&private_key);
 
-    println!("{:#?}", private_key.write_pkcs8_pem_file(output, LineEnding::default()));
-    println!("{:#?}", public_key.write_public_key_pem_file(String::from("hdii"), LineEnding::default()));
-    Ok(())
+            let output_pub:  PathBuf = output.with_file_name(format!("{}.pub",output.file_stem().unwrap().to_string_lossy()));
+
+            public_key
+                .write_public_key_pem_file(output_pub, LineEnding::default());
+            Ok(())
+        }
+
+        Err(error) => Err(error),
+    };
+    Err(io::Error::new(io::ErrorKind::Other, format!("Unkown error!")))
 }
