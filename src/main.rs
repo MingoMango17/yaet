@@ -244,14 +244,16 @@ fn main() {
             let output: PathBuf = args.output;
             let bits: usize = args.bits.parse().unwrap();
 
-            println!("Generating private and public RSA keys...");
-            let result = utils::create_rsa_keys(&output, bits);
-            println!("Saved {:?}", output.as_path());
-
             if cli.debug {
                 println!("Output: {:#?}", output);
                 println!("Bits: {:#?}", bits);
             }
+
+            println!("Generating private and public RSA keys...");
+            let result = utils::generate_rsa_keys(&output, bits);
+
+            println!("Saved {:?}", output.as_path());
+
         }
     }
 }

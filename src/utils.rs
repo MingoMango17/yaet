@@ -24,21 +24,24 @@ pub fn read_input(file: &Option<PathBuf>) -> Result<String, io::Error> {
     }
 }
 
-pub fn create_rsa_keys(output: &PathBuf, bits: usize) -> Result<(), io::Error> {
+/// Private and Public RSA keys generation
+///
+/// Currently, this function can only export to PKCS#8 format.
+///
+pub fn generate_rsa_keys(output: &PathBuf, bits: usize) -> Result<(), std::io::Error> {
     let mut rng = rand::thread_rng();
-    match RsaPrivateKey::new(&mut rng, bits) {
-        Ok(private_key) => {
-            private_key.write_pkcs8_pem_file(output, LineEnding::default());
-            let public_key = RsaPublicKey::from(&private_key);
+    let private_key = RsaPrivateKey::new(&mut rng, bits)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't
+                                                                                          // be generated
+    private_key.write_pkcs8_pem_file(output, LineEnding::default());
 
-            let output_pub:  PathBuf = output.with_file_name(format!("{}.pub",output.file_stem().unwrap().to_string_lossy()));
-
-            public_key
-                .write_public_key_pem_file(output_pub, LineEnding::default());
-            Ok(())
-        }
-
-        Err(error) => Err(error),
-    };
-    Err(io::Error::new(io::ErrorKind::Other, format!("Unkown error!")))
+    let public_key = RsaPublicKey::from(&private_key);
+    let output_pub: PathBuf = output.with_file_name(format!(
+        "{}.pub",
+        output.file_stem().unwrap().to_string_lossy()
+    ));
+    public_key.write_public_key_pem_file(output_pub, LineEnding::default());
+    Ok(())
 }
+
+pub fn generate_signature_keys()
