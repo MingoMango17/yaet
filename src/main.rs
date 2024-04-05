@@ -55,7 +55,7 @@ enum Params {
 ///
 /// - Public key of the receiver: Essential for encrypting the message securely for the intended recipient.
 ///
-/// - Private signature: Essential for providing integrity of the message.
+/// - Signing key: Essential for providing integrity of the message.
 ///
 #[derive(Parser, Debug)]
 #[command(about = "Encrypt a message", visible_alias = "enc")]
@@ -79,7 +79,7 @@ struct EncryptArgs {
     /// The private key signature is used for authenticity and integrity of your message.
     ///
     #[arg(required = true, long, short = 's', visible_aliases = ["signature", "sig"])]
-    private_key_signature: PathBuf,
+    signing_key: PathBuf,
 
     /// Output to a FILE
     ///
@@ -130,7 +130,7 @@ struct DecryptArgs {
     /// The public key signature is used for authenticity and integrity of the received encrypted message.
     ///
     #[arg(required = true, long, short = 's', visible_aliases = ["signature", "sig"])]
-    public_key_signature: PathBuf,
+    verifying_key: PathBuf,
 
     /// Output to a FILE
     ///
@@ -176,7 +176,7 @@ fn main() {
         Params::Encrypt(args) => {
             let message: String = utils::read_input(&args.file).unwrap();
             let public_key: PathBuf = args.public_key;
-            let signature: PathBuf = args.private_key_signature;
+            let signature: PathBuf = args.signing_key;
             let output: PathBuf = args.output.unwrap_or_default();
 
             if cli.debug {
@@ -194,7 +194,7 @@ fn main() {
         Params::Decrypt(args) => {
             let message: Vec<u8> = utils::read_input_raw(&args.file).unwrap();
             let private_key: PathBuf = args.private_key;
-            let signature: PathBuf = args.public_key_signature;
+            let signature: PathBuf = args.verifying_key;
             let output: PathBuf = args.output.unwrap_or_default();
 
             if cli.debug {
@@ -225,7 +225,7 @@ fn main() {
             println!("Saved {:?}", output.as_path());
             println!("Generating private and public signature keys...");
 
-            let output_signature: PathBuf = utils::append_to_path(output, ".signature");
+            let output_signature: PathBuf = utils::append_to_path(output, ".sig");
             utils::generate_private_key(&output_signature, bits)
                 .expect("failed to generate private key");
             utils::generate_public_key(&output_signature).expect("failed to generate public key");

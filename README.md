@@ -45,6 +45,15 @@ cargo build --release
 
 ## Usage
 
+Sample keys and signatures are provided in the [examples](./examples/) directory.
+
+### Generating keys
+
+### Encrypting messages
+
+### Decrypting secret messages
+
+
 ## Methodology
 
 ### Key-pair generation
@@ -61,6 +70,8 @@ cargo build --release
 - the encrypted data output is either saved on a file or to standard output
 
 ### Signature
+
+- uses "blinded" RSASSA-PSS signatures as described in [draft-irtf-cfrg-rsa-blind-signatures](https://datatracker.ietf.org/doc/draft-irtf-cfrg-rsa-blind-signatures/) because incorporates blinding techniques for enhanced security.
 
 ### Decryption
 

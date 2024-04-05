@@ -1,6 +1,6 @@
 use pkcs8::DecodePublicKey;
-use rsa::sha2::{Digest, Sha256};
-use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding, Verifier};
+use rsa::sha2::Sha256;
+use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
 use rsa::{
     pkcs8::DecodePrivateKey,
     pkcs8::EncodePrivateKey,
@@ -11,12 +11,11 @@ use rsa::{
 };
 use std::ffi::{OsStr, OsString};
 use std::fs::File;
-use std::io::{self, prelude::*, Read, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
-fn print_raw_data(data: &[u8]) -> io::Result<()> {
-    io::stdout().lock().write_all(data)?;
-    Ok(())
+pub fn print_raw_data(data: &[u8]) {
+    let _ = io::stdout().lock().write_all(data);
 }
 
 pub fn read_input(file: &Option<PathBuf>) -> Result<String, io::Error> {
@@ -164,7 +163,21 @@ pub fn generate_public_key(private_key_path: &PathBuf) -> Result<(), io::Error> 
 
 /// Encrypts then signs a plain text message.
 ///
-/// Once the message is encrypted with signature, this should output a FILE or standard output.
+/// This function takes a plain text message, encrypts it using RSA-OAEP with a provided public key,
+/// and then signs the encrypted message with a private key.
+/// The encrypted message is either written to a file specified by `output`, or printed to standard output.
+///
+/// # Arguments
+///
+/// * `message` - A slice containing the plain text message to be encrypted and signed.
+/// * `public_key_path` - The path to the file containing the public key used for encryption.
+/// * `signature_path` - The path to the file containing the private key used for signing.
+/// * `output` - The path to the file where the encrypted message will be written. If empty, the message
+///              will be printed to standard output.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, `Ok(())` is returned.
 ///
 pub fn generate_encrypted_message(
     message: &[u8],
@@ -177,21 +190,46 @@ pub fn generate_encrypted_message(
     let signature = RsaPrivateKey::read_pkcs8_pem_file(signature_path)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 
-    let encrypted_data: Vec<u8> = encrypt_message_rsa_oaep(public_key, message)?;
+    let encrypted_data: Vec<u8> = encrypt_message_rsa_oaep(public_key, message);
+    let digital_signature: rsa::pss::Signature = sign_message_with_rsassa_pss(signature, message);
 
-    // Write to standard output
+    // Concatenate the encrypted message and digital signature
+    let mut signed_message: Vec<u8> = encrypted_data.clone();
+    signed_message.extend_from_slice(digital_signature.to_vec().as_ref());
+
+    // Write encrypted message to standard output
     if output.to_string_lossy().len() == 0 {
-        return print_raw_data(&encrypted_data);
+        print_raw_data(&signed_message);
+
+        return Ok(());
     }
 
     // Otherwise, write to a FILE
     let mut file = File::create(output)?;
-    file.write_all(&encrypted_data)?;
+    file.write_all(&signed_message)?;
     file.flush()?;
 
     Ok(())
 }
 
+/// Decrypts a previously encrypted and signed message.
+///
+/// This function takes an encrypted message, decrypts it using RSA-OAEP with a provided private key,
+/// and verifies the signature using a provided public key.
+/// The decrypted message is either written to a file specified by `output`, or printed to standard output.
+///
+/// # Arguments
+///
+/// * `encrypted_message` - A slice containing the encrypted message to be decrypted.
+/// * `private_key_path` - The path to the file containing the private key used for decryption.
+/// * `signature_path` - The path to the file containing the public key used for signature verification.
+/// * `output` - The path to the file where the decrypted message will be written. If empty, the message
+///              will be printed to standard output.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, `Ok(())` is returned.
+///
 pub fn generate_decrypted_message(
     encrypted_message: &[u8],
     private_key_path: &Path,
@@ -203,11 +241,21 @@ pub fn generate_decrypted_message(
     let signature = RsaPublicKey::read_public_key_pem_file(signature_path)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 
-    let decrypted_data: Vec<u8> = decrypt_message_rsa_oaep(private_key, encrypted_message)?;
+    // Split the vector into two equal parts
+    let (encrypted_data_slice, signed_message) =
+        encrypted_message.split_at(encrypted_message.len() / 2);
+    let decrypted_data: Vec<u8> = decrypt_message_rsa_oaep(private_key, encrypted_data_slice);
+
+    let digital_signature = rsa::pss::Signature::try_from(signed_message)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+    verify_message_with_rsassa_pss(signature, &decrypted_data, digital_signature)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 
     // Write to standard output
     if output.to_string_lossy().len() == 0 {
-        return print_raw_data(&decrypted_data);
+        print_raw_data(&decrypted_data);
+
+        return Ok(());
     }
 
     // Otherwise, write to a FILE
@@ -218,26 +266,68 @@ pub fn generate_decrypted_message(
     Ok(())
 }
 
-pub fn encrypt_message_rsa_oaep(
-    public_key: RsaPublicKey,
-    message: &[u8],
-) -> Result<Vec<u8>, io::Error> {
+/// Encrypts a message using RSA-OAEP.
+///
+/// This function takes a public key and a message, encrypts the message using RSA-OAEP encryption,
+/// and returns the encrypted data.
+///
+/// # Arguments
+///
+/// * `public_key` - The RSA public key used for encryption.
+/// * `message` - A slice containing the message to be encrypted.
+///
+/// # Returns
+///
+/// A `Result` containing a vector of bytes representing the encrypted message if successful.
+/// If an error occurs during encryption, an `io::Error` is returned.
+///
+pub fn encrypt_message_rsa_oaep(public_key: RsaPublicKey, message: &[u8]) -> Vec<u8> {
     let mut rng = rand::rngs::OsRng;
     let padding = Oaep::new::<Sha256>();
-    let encrypted_data = public_key
-        .encrypt(&mut rng, padding, message)
-        .expect("failed to encrypt message");
 
-    Ok(encrypted_data) // return encrypted data (message)
+    public_key
+        .encrypt(&mut rng, padding, message)
+        .expect("failed to encrypt message")
 }
 
-pub fn decrypt_message_rsa_oaep(
-    private_key: RsaPrivateKey,
-    encrypted_message: &[u8],
-) -> Result<Vec<u8>, io::Error> {
+/// Decrypts a message encrypted using RSA-OAEP.
+///
+/// This function takes a private key and an encrypted message, decrypts the message using RSA-OAEP decryption,
+/// and returns the decrypted data.
+///
+/// # Arguments
+///
+/// * `private_key` - The RSA private key used for decryption.
+/// * `encrypted_message` - A slice containing the encrypted message to be decrypted.
+///
+/// # Returns
+///
+/// A `Result` containing a vector of bytes representing the decrypted message if successful.
+/// If an error occurs during decryption, an `io::Error` is returned.
+///
+pub fn decrypt_message_rsa_oaep(private_key: RsaPrivateKey, encrypted_message: &[u8]) -> Vec<u8> {
     let padding = Oaep::new::<Sha256>();
-    let decrypted_data = private_key
+
+    private_key
         .decrypt(padding, encrypted_message)
-        .expect("failed to decrypt");
-    Ok(decrypted_data)
+        .expect("failed to decrypt")
+}
+
+pub fn sign_message_with_rsassa_pss(key: RsaPrivateKey, message: &[u8]) -> rsa::pss::Signature {
+    let mut rng = rand::rngs::OsRng;
+
+    // Generate the signing key from the private key signature
+    let signing_key = BlindedSigningKey::<Sha256>::new(key);
+
+    // Sign and return the message
+    signing_key.sign_with_rng(&mut rng, message)
+}
+
+pub fn verify_message_with_rsassa_pss(
+    key: RsaPublicKey,
+    decrypted_message: &[u8],
+    signature: rsa::pss::Signature,
+) -> Result<(), rsa::signature::Error> {
+    let verifying_key = VerifyingKey::<Sha256>::new(key);
+    verifying_key.verify(decrypted_message, &signature)
 }
