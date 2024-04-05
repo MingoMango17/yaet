@@ -9,6 +9,32 @@ on:
       - v[0-9]+.*
 
 jobs:
+  rustdoc:
+    name: Rustdoc
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: '0x42697262/yaet'
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Create rustdoc
+        run: cargo doc
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: target/doc
+          clean: true
+          repository-name: 0x42697262/yaet
+
   create-release:
     runs-on: ubuntu-latest
     steps:
