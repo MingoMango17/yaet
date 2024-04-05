@@ -247,6 +247,15 @@ Options:
           
           [aliases: out]
 
+  -x, --skip-verification
+          Option to skip integrity check.
+          
+          When enabled, this option ignores the signature of the encrypted message and proceeds to return the decrypted message without performing signature verification.
+          
+          By default, this option is set to `false`.
+          
+          [aliases: skip]
+
   -h, --help
           Print help (see a summary with '-h')
 ```
