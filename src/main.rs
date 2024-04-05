@@ -125,6 +125,15 @@ struct DecryptArgs {
     ///
     #[arg(long, short = 'o', visible_aliases = ["out"])]
     output: Option<PathBuf>,
+
+    /// Option to skip integrity check.
+    ///
+    /// When enabled, this option ignores the signature of the encrypted message and proceeds to return the decrypted message without performing signature verification.
+    ///
+    /// By default, this option is set to `false`.
+    ///
+    #[arg(long, short = 'x', default_value = "false", visible_aliases = ["skip"])]
+    skip_verification: bool,
 }
 
 /// Generate new keypairs for encryption and signing.
@@ -166,6 +175,28 @@ struct GenerateArgs {
     bits: String,
 }
 
+/// The main function parses command line arguments using the `Cli` struct, then proceeds to execute the specified command.
+///
+/// # Arguments
+///
+/// - `cli`: An instance of the `Cli` struct containing parsed command line arguments.
+///
+/// # Command Handling
+///
+/// The function matches the command specified in the `Params` enum and executes the corresponding logic:
+///
+/// - **Encrypt**: Reads the input message from a file, encrypts it using the provided public key and signing key, and optionally saves the encrypted message to an output file.
+/// - **Decrypt**: Reads the encrypted message from a file, decrypts it using the provided private key and verifying key, and optionally saves the decrypted message to an output file. It also supports skipping signature verification if specified.
+/// - **Generate**: Generates private and public RSA key pairs and private and public signature key pairs, saving them to specified output files.
+///
+/// # Debug Mode
+///
+/// If debug mode is enabled (`cli.debug`), the function prints debug information including input/output paths and skip verification flag.
+///
+/// # Errors
+///
+/// If any errors occur during command execution, they are printed to standard error output.
+///
 fn main() {
     let cli: Cli = Cli::parse();
 
@@ -197,15 +228,23 @@ fn main() {
             let private_key: PathBuf = args.private_key;
             let signature: PathBuf = args.verifying_key;
             let output: PathBuf = args.output.unwrap_or_default();
+            let skip_verification: bool = args.skip_verification;
 
             if cli.debug {
                 println!("Message: {:?}", message);
                 println!("Private key: {:#?}", private_key);
                 println!("Signature: {:#?}", signature);
                 println!("Output: {:#?}", output);
+                println!("Skip verification: {:#?}", skip_verification);
             }
 
-            match utils::generate_decrypted_message(&message, &private_key, &signature, &output) {
+            match utils::generate_decrypted_message(
+                &message,
+                &private_key,
+                &signature,
+                &output,
+                skip_verification,
+            ) {
                 Ok(_) => {}
                 Err(err) => {
                     eprint!("{}", err)

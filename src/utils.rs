@@ -1,5 +1,4 @@
 /// Helper functions are defined here.
-
 use pkcs8::DecodePublicKey;
 use rsa::sha2::Sha256;
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
@@ -111,12 +110,14 @@ pub fn append_to_path(path: impl Into<OsString>, suffix: impl AsRef<OsStr>) -> P
 ///
 pub fn generate_private_key(output: &PathBuf, bits: usize) -> Result<(), io::Error> {
     let mut rng = rand::rngs::OsRng;
-    let private_key = RsaPrivateKey::new(&mut rng, bits)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't
-                                                                                          // be generated
-    private_key
-        .write_pkcs8_pem_file(output, LineEnding::default())
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't be written
+    let private_key = match RsaPrivateKey::new(&mut rng, bits) {
+        Ok(pkey) => pkey,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
+    match private_key.write_pkcs8_pem_file(output, LineEnding::default()) {
+        Ok(pkey) => pkey,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
 
     Ok(())
 }
@@ -150,15 +151,18 @@ pub fn generate_private_key(output: &PathBuf, bits: usize) -> Result<(), io::Err
 /// ```
 ///
 pub fn generate_public_key(private_key_path: &PathBuf) -> Result<(), io::Error> {
-    let private_key = RsaPrivateKey::read_pkcs8_pem_file(private_key_path)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't
-                                                                                          // be generated
+    let private_key = match RsaPrivateKey::read_pkcs8_pem_file(private_key_path) {
+        Ok(pkey) => pkey,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
+
     let public_key = RsaPublicKey::from(&private_key);
 
     let output: PathBuf = append_to_path(private_key_path, ".pub");
-    public_key
-        .write_public_key_pem_file(output, LineEnding::default()) // Save public key to file
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't be written
+    match public_key.write_public_key_pem_file(output, LineEnding::default()) {
+        Ok(_) => {}
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
 
     Ok(())
 }
@@ -234,6 +238,7 @@ pub fn generate_encrypted_message(
 /// * `signature_path` - The path to the file containing the public key used for signature verification.
 /// * `output` - The path to the file where the decrypted message will be written. If empty, the message
 ///              will be printed to standard output.
+/// * `skip_verification` - Skips verification of the message integrity
 ///
 /// # Returns
 ///
@@ -244,6 +249,7 @@ pub fn generate_decrypted_message(
     private_key_path: &Path,
     signature_path: &Path,
     output: &Path,
+    skip_verification: bool,
 ) -> Result<(), io::Error> {
     let private_key = match RsaPrivateKey::read_pkcs8_pem_file(private_key_path) {
         Ok(pkey) => pkey,
@@ -263,10 +269,16 @@ pub fn generate_decrypted_message(
         Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
     };
 
-    let digital_signature = rsa::pss::Signature::try_from(signed_message)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
-    verify_message_with_rsassa_pss(signature, &decrypted_data, digital_signature)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+    if !skip_verification {
+        let digital_signature = match rsa::pss::Signature::try_from(signed_message) {
+            Ok(pkey) => pkey,
+            Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+        };
+        match verify_message_with_rsassa_pss(signature, &decrypted_data, digital_signature) {
+            Ok(_) => {}
+            Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+        };
+    }
 
     // Write to standard output
     if output.to_string_lossy().len() == 0 {
