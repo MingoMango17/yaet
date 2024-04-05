@@ -12,7 +12,7 @@ use rsa::{
 use std::ffi::{OsStr, OsString};
 use std::fs::File;
 use std::io::{self, prelude::*, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn print_raw_data(data: &[u8]) -> io::Result<()> {
     io::stdout().lock().write_all(data)?;
@@ -31,6 +31,24 @@ pub fn read_input(file: &Option<PathBuf>) -> Result<String, io::Error> {
         None => {
             let mut message = String::new();
             io::stdin().read_to_string(&mut message)?;
+
+            Ok(message)
+        }
+    }
+}
+
+pub fn read_input_raw(file: &Option<PathBuf>) -> Result<Vec<u8>, io::Error> {
+    match file {
+        Some(filepath) => {
+            let mut file = File::open(filepath)?;
+            let mut message = Vec::new();
+            file.read_to_end(&mut message)?;
+
+            Ok(message)
+        }
+        None => {
+            let mut message = Vec::new();
+            io::stdin().read_to_end(&mut message)?;
 
             Ok(message)
         }
@@ -150,9 +168,9 @@ pub fn generate_public_key(private_key_path: &PathBuf) -> Result<(), io::Error> 
 ///
 pub fn generate_encrypted_message(
     message: &[u8],
-    public_key_path: &PathBuf,
-    signature_path: &PathBuf,
-    output: &PathBuf,
+    public_key_path: &Path,
+    signature_path: &Path,
+    output: &Path,
 ) -> Result<(), io::Error> {
     let public_key = RsaPublicKey::read_public_key_pem_file(public_key_path)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
@@ -174,51 +192,52 @@ pub fn generate_encrypted_message(
     Ok(())
 }
 
+pub fn generate_decrypted_message(
+    encrypted_message: &[u8],
+    private_key_path: &Path,
+    signature_path: &Path,
+    output: &Path,
+) -> Result<(), io::Error> {
+    let private_key = RsaPrivateKey::read_pkcs8_pem_file(private_key_path)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+    let signature = RsaPublicKey::read_public_key_pem_file(signature_path)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 
-// pub fn generate_decrypted_message(
-//     encrypted_message: &str,
-//     public_key_path: &PathBuf,
-//     signature_path: &PathBuf,
-//     output: &PathBuf,
-// ) -> Result<(), io::Error> {
-//     let public_key = RsaPublicKey::read_public_key_pem_file(public_key_path)
-//         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
-//     let signature = RsaPrivateKey::read_pkcs8_pem_file(signature_path)
-//         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
-//
-//     let encrypted_data: Vec<u8> = encrypt_message_rsa_oaep(public_key, message)?;
-//
-//     // Write to standard output
-//     if output.to_string_lossy().len() == 0 {
-//         return print_raw_data(&encrypted_data);
-//     }
-//
-//     // Otherwise, write to a FILE
-//     let mut file = File::create(output)?;
-//     file.write_all(&encrypted_data)?;
-//     file.flush()?;
-//
-//     Ok(())
-// }
+    let decrypted_data: Vec<u8> = decrypt_message_rsa_oaep(private_key, encrypted_message)?;
+
+    // Write to standard output
+    if output.to_string_lossy().len() == 0 {
+        return print_raw_data(&decrypted_data);
+    }
+
+    // Otherwise, write to a FILE
+    let mut file = File::create(output)?;
+    file.write_all(&decrypted_data)?;
+    file.flush()?;
+
+    Ok(())
+}
+
 pub fn encrypt_message_rsa_oaep(
     public_key: RsaPublicKey,
     message: &[u8],
 ) -> Result<Vec<u8>, io::Error> {
     let mut rng = rand::rngs::OsRng;
-    // let data: &[u8] = message.as_bytes();
     let padding = Oaep::new::<Sha256>();
     let encrypted_data = public_key
-        .encrypt(&mut rng, padding, &message[..])
+        .encrypt(&mut rng, padding, message)
         .expect("failed to encrypt message");
 
     Ok(encrypted_data) // return encrypted data (message)
 }
 
-pub fn decrypt_message_rsa_oaep(private_key: RsaPrivateKey, encrypted_message: &str) -> Result<Vec<u8>, io::Error> {
+pub fn decrypt_message_rsa_oaep(
+    private_key: RsaPrivateKey,
+    encrypted_message: &[u8],
+) -> Result<Vec<u8>, io::Error> {
     let padding = Oaep::new::<Sha256>();
-    let data: &[u8] = encrypted_message.as_bytes();
     let decrypted_data = private_key
-        .decrypt(padding, data)
+        .decrypt(padding, encrypted_message)
         .expect("failed to decrypt");
     Ok(decrypted_data)
 }

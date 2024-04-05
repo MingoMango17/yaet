@@ -45,6 +45,26 @@ cargo build --release
 
 ## Usage
 
+## Methodology
+
+### Key-pair generation
+
+- creates two private and public keys
+- can set the specific bits of the private keys
+- defaults to 1648 bits (or 206 bytes) for 140 character input limit
+- the output is either saved on a file or to standard output
+
+### Encryption
+
+- uses RSA with OAEP padding
+- uses sha256 for the oaep padding as default (cannot be changed)
+- the encrypted data output is either saved on a file or to standard output
+
+### Signature
+
+### Decryption
+
+### Verfication
 
 
 ## Contributing

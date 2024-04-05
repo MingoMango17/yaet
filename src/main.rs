@@ -118,28 +118,26 @@ struct DecryptArgs {
     #[arg()]
     file: Option<PathBuf>,
 
-    /// Your identification key.
+    /// Your RSA private key to decrypt the message.
     ///
-    /// This is your Privacy Enhanced Mail format private key to decrypt the encrypted message.
+    /// The private key is used to decrypt the message.
     ///
-    #[arg(required = true, long, short = 'p')]
-    pem: PathBuf,
+    #[arg(required = true, long, short = 'p', visible_aliases = [ "private", "key", "pkey", "pk"])]
+    private_key: PathBuf,
 
-    /// The recipient's public signature key.
+    /// The recipient's public key signature.
     ///
-    /// This is the recipient's public signature key used for verification if the message
-    /// truly originated from the sender.
+    /// The public key signature is used for authenticity and integrity of the received encrypted message.
     ///
-    #[arg(required = true, long, short = 's')]
-    signature: PathBuf,
+    #[arg(required = true, long, short = 's', visible_aliases = ["signature", "sig"])]
+    public_key_signature: PathBuf,
 
-    /// Skip verification of the encrypted message.
+    /// Output to a FILE
     ///
-    /// **WARNING: Disabling verification removes the authenticity assurance from the encrypted
-    /// message!**
+    /// Specify the file path for the output of the encrypted message.
     ///
-    #[arg(long, short = 'v')]
-    skip_verification: bool,
+    #[arg(long, short = 'o', visible_aliases = ["out"])]
+    output: Option<PathBuf>,
 }
 
 /// Generate new keypairs for encryption and signing.
@@ -192,19 +190,24 @@ fn main() {
             utils::generate_encrypted_message(raw_message, &public_key, &signature, &output)
                 .expect("failed to encrypt message");
         }
+
         Params::Decrypt(args) => {
-            let message: String = utils::read_input(&args.file).unwrap();
-            let pem: PathBuf = args.pem; // probably not needed
-            let signature: PathBuf = args.signature;
-            let skip_verification: bool = args.skip_verification;
+            let message: Vec<u8> = utils::read_input_raw(&args.file).unwrap();
+            let private_key: PathBuf = args.private_key;
+            let signature: PathBuf = args.public_key_signature;
+            let output: PathBuf = args.output.unwrap_or_default();
 
             if cli.debug {
-                println!("Message: {:#?}", message);
-                println!("PEM: {:#?}", pem);
+                println!("Message: {:?}", message);
+                println!("Private key: {:#?}", private_key);
                 println!("Signature: {:#?}", signature);
-                println!("Skip Verification: {:#?}", skip_verification);
+                println!("Output: {:#?}", output);
             }
+
+            utils::generate_decrypted_message(&message, &private_key, &signature, &output)
+                .expect("failed to encrypt message");
         }
+
         Params::Generate(args) => {
             let output: PathBuf = args.output;
             let bits: usize = args.bits.parse().unwrap();
