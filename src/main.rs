@@ -187,7 +187,9 @@ fn main() {
                 println!("Signature: {:#?}", signature);
                 println!("Output: {:#?}", output);
             }
-            utils::generate_encrypted_message(&message, &public_key, &signature, &output)
+
+            let raw_message: &[u8] = message.as_bytes();
+            utils::generate_encrypted_message(raw_message, &public_key, &signature, &output)
                 .expect("failed to encrypt message");
         }
         Params::Decrypt(args) => {
