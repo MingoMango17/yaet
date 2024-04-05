@@ -250,11 +250,19 @@ fn main() {
             }
 
             println!("Generating private and public RSA keys...");
-            // let result = utils::generate_rsa_keys(&output, bits);
-            utils::generate_private_key(&output, bits);
-            utils::generate_public_key(&output);
+
+            utils::generate_private_key(&output, bits).expect("failed to generate private key");
+            utils::generate_public_key(&output).expect("failed to generate public key");
 
             println!("Saved {:?}", output.as_path());
+            println!("Generating private and public signature keys...");
+
+            let output_signature: PathBuf = utils::append_to_path(output, ".signature");
+            utils::generate_private_key(&output_signature, bits)
+                .expect("failed to generate private key");
+            utils::generate_public_key(&output_signature).expect("failed to generate public key");
+
+            println!("Saved {:?}", output_signature.as_path());
         }
     }
 }

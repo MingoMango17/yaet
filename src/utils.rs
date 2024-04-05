@@ -1,8 +1,14 @@
-// use pkcs8::DecodePrivateKey;
+use rsa::sha2::{Digest, Sha256};
+use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding, Verifier};
 use rsa::{
-    pkcs8::DecodePrivateKey, pkcs8::EncodePrivateKey, pkcs8::EncodePublicKey, pkcs8::LineEnding,
-    sha2::Sha256, Oaep, RsaPrivateKey, RsaPublicKey,
+    pkcs8::DecodePrivateKey,
+    pkcs8::EncodePrivateKey,
+    pkcs8::EncodePublicKey,
+    pkcs8::LineEnding,
+    pss::{BlindedSigningKey, VerifyingKey},
+    Oaep, RsaPrivateKey, RsaPublicKey,
 };
+use std::ffi::{OsStr, OsString};
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -24,6 +30,35 @@ pub fn read_input(file: &Option<PathBuf>) -> Result<String, io::Error> {
         }
     }
 }
+
+/// Appends a string `s` to a path `p` and returns the resulting `PathBuf`.
+///
+/// # Arguments
+///
+/// * `path` - A value that can be converted into an `OsString`, representing the base path.
+/// * `suffix` - A reference to a value that can be converted into an `OsStr`, representing the string to append.
+///
+/// # Returns
+///
+/// A `PathBuf` containing the concatenated path.
+///
+/// # Example
+///
+/// ```
+/// use std::path::PathBuf;
+///
+/// let base_path = "/path/to/base".to_owned();
+/// let appended_path = utils::append_to_path(base_path, "file.txt");
+/// assert_eq!(appended_path.to_string_lossy(), "/path/to/base/file.txt");
+/// ```
+///
+pub fn append_to_path(path: impl Into<OsString>, suffix: impl AsRef<OsStr>) -> PathBuf {
+    let mut path = path.into();
+    path.push(suffix);
+    path.into()
+}
+
+
 
 /// Generate a Private RSA key
 ///
@@ -56,7 +91,9 @@ pub fn generate_private_key(output: &PathBuf, bits: usize) -> Result<(), io::Err
     let private_key = RsaPrivateKey::new(&mut rng, bits)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't
                                                                                           // be generated
-    private_key.write_pkcs8_pem_file(output, LineEnding::default());
+    private_key
+        .write_pkcs8_pem_file(output, LineEnding::default())
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't be written
 
     Ok(())
 }
@@ -90,25 +127,15 @@ pub fn generate_private_key(output: &PathBuf, bits: usize) -> Result<(), io::Err
 /// ```
 ///
 pub fn generate_public_key(private_key_path: &PathBuf) -> Result<(), io::Error> {
-    let mut private_key_file = File::open(private_key_path)?;
-    let mut private_key_content = String::new();
-    private_key_file.read_to_string(&mut private_key_content)?;
-
-    let private_key = RsaPrivateKey::from_pkcs8_pem(&private_key_content)
+    let private_key = RsaPrivateKey::read_pkcs8_pem_file(private_key_path)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't
                                                                                           // be generated
     let public_key = RsaPublicKey::from(&private_key);
 
-    let output: PathBuf = private_key_path.with_file_name(format!(
-        "{}.pub",
-        private_key_path.file_stem().unwrap().to_string_lossy()
-    ));
+    let output: PathBuf = append_to_path(private_key_path, ".pub");
+    public_key
+        .write_public_key_pem_file(output, LineEnding::default()) // Save public key to file
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?; // returns an error when the key can't be written
 
-    public_key.write_public_key_pem_file(output, LineEnding::default()); // Save public key to file
-
-    Ok(())
-}
-
-pub fn create_signature(private_key: &PathBuf) -> Result<(), io::Error> {
     Ok(())
 }
