@@ -332,3 +332,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - https://github.com/gebmecod/RSA-encryption - A quick and easy way to encrypt your data written in Python
 - https://github.com/sycasec/rsa_oaep - A more advanced set of features written in Python
 - https://github.com/kyle-gonzales/cmsc134mp2-diez_gonzales_pulvera - An attempt to build a chat app implemented in Python
+- https://github.com/GoodyCarlo/cmsc134-mp2 - Implements secure message encryption, signing, and decryption with detailed examples and explanations regarding threat vectors
