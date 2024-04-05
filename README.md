@@ -20,6 +20,9 @@ Main repository is hosted on [Github](https://github.com/0x42697262/yaet).
 
 ## Building
 
+You must have a working Rust environment installed on your computer.
+See how to install Rust using [rustup](https://rustup.rs/).
+
 1. Clone the repository:
 ```
 $ git clone https://github.com/0x42697262/yaet.git
@@ -41,6 +44,12 @@ $ cargo build --release
 
 ```
 $ ./target/release/yaet --help
+```
+
+Alternatively, you can directly run the tool without building.
+
+```
+$ cargo run -- help
 ```
 
 ## Documentation
