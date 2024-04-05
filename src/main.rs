@@ -145,10 +145,20 @@ struct DecryptArgs {
 /// This flag triggers the generation of two pairs of keys: one for encryption and one for verification.
 /// Each pair includes both a private and a public key.
 ///
+/// When provided with a filename, this will create:
+///
+/// `filename` - private key encryption
+///
+/// `filename.pub` - public key encryption
+///
+/// `filename.sig` - signing key
+///
+/// `filename.sig.pub` - verification key
+///
 #[derive(Parser, Debug)]
 #[command(about = "Generate private and public keys", visible_alias = "gen")]
 struct GenerateArgs {
-    /// Output file
+    /// Filename
     #[arg(
         long,
         short = 'o',
