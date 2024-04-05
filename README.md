@@ -9,6 +9,7 @@ It provides a simple and secure way to protect sensitive data using asymmetric e
 > It is not suitable for production use.
 
 Main repository is hosted on [Github](https://github.com/0x42697262/yaet).
+Please see the [latest](https://github.com/0x42697262/yaet/releases/latest) release for downloads.
 
 ## Features
 
