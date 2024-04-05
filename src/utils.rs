@@ -185,12 +185,19 @@ pub fn generate_encrypted_message(
     signature_path: &Path,
     output: &Path,
 ) -> Result<(), io::Error> {
-    let public_key = RsaPublicKey::read_public_key_pem_file(public_key_path)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
-    let signature = RsaPrivateKey::read_pkcs8_pem_file(signature_path)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+    let public_key: RsaPublicKey = match RsaPublicKey::read_public_key_pem_file(public_key_path) {
+        Ok(pkey) => pkey,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
+    let signature = match RsaPrivateKey::read_pkcs8_pem_file(signature_path) {
+        Ok(signature) => signature,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
 
-    let encrypted_data: Vec<u8> = encrypt_message_rsa_oaep(public_key, message);
+    let encrypted_data: Vec<u8> = match encrypt_message_rsa_oaep(public_key, message) {
+        Ok(data) => data,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
     let digital_signature: rsa::pss::Signature = sign_message_with_rsassa_pss(signature, message);
 
     // Concatenate the encrypted message and digital signature
@@ -236,15 +243,23 @@ pub fn generate_decrypted_message(
     signature_path: &Path,
     output: &Path,
 ) -> Result<(), io::Error> {
-    let private_key = RsaPrivateKey::read_pkcs8_pem_file(private_key_path)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
-    let signature = RsaPublicKey::read_public_key_pem_file(signature_path)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+    let private_key = match RsaPrivateKey::read_pkcs8_pem_file(private_key_path) {
+        Ok(pkey) => pkey,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
+    let signature = match RsaPublicKey::read_public_key_pem_file(signature_path) {
+        Ok(signature) => signature,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
 
     // Split the vector into two equal parts
     let (encrypted_data_slice, signed_message) =
         encrypted_message.split_at(encrypted_message.len() / 2);
-    let decrypted_data: Vec<u8> = decrypt_message_rsa_oaep(private_key, encrypted_data_slice);
+    let decrypted_data: Vec<u8> = match decrypt_message_rsa_oaep(private_key, encrypted_data_slice)
+    {
+        Ok(data) => data,
+        Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string())),
+    };
 
     let digital_signature = rsa::pss::Signature::try_from(signed_message)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
@@ -281,13 +296,14 @@ pub fn generate_decrypted_message(
 /// A `Result` containing a vector of bytes representing the encrypted message if successful.
 /// If an error occurs during encryption, an `io::Error` is returned.
 ///
-pub fn encrypt_message_rsa_oaep(public_key: RsaPublicKey, message: &[u8]) -> Vec<u8> {
+pub fn encrypt_message_rsa_oaep(
+    public_key: RsaPublicKey,
+    message: &[u8],
+) -> Result<Vec<u8>, rsa::Error> {
     let mut rng = rand::rngs::OsRng;
     let padding = Oaep::new::<Sha256>();
 
-    public_key
-        .encrypt(&mut rng, padding, message)
-        .expect("failed to encrypt message")
+    public_key.encrypt(&mut rng, padding, message)
 }
 
 /// Decrypts a message encrypted using RSA-OAEP.
@@ -305,12 +321,13 @@ pub fn encrypt_message_rsa_oaep(public_key: RsaPublicKey, message: &[u8]) -> Vec
 /// A `Result` containing a vector of bytes representing the decrypted message if successful.
 /// If an error occurs during decryption, an `io::Error` is returned.
 ///
-pub fn decrypt_message_rsa_oaep(private_key: RsaPrivateKey, encrypted_message: &[u8]) -> Vec<u8> {
+pub fn decrypt_message_rsa_oaep(
+    private_key: RsaPrivateKey,
+    encrypted_message: &[u8],
+) -> Result<Vec<u8>, rsa::Error> {
     let padding = Oaep::new::<Sha256>();
 
-    private_key
-        .decrypt(padding, encrypted_message)
-        .expect("failed to decrypt")
+    private_key.decrypt(padding, encrypted_message)
 }
 
 pub fn sign_message_with_rsassa_pss(key: RsaPrivateKey, message: &[u8]) -> rsa::pss::Signature {

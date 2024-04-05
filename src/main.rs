@@ -187,8 +187,12 @@ fn main() {
             }
 
             let raw_message: &[u8] = message.as_bytes();
-            utils::generate_encrypted_message(raw_message, &public_key, &signature, &output)
-                .expect("failed to encrypt message");
+            match utils::generate_encrypted_message(raw_message, &public_key, &signature, &output) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprint!("{}", err);
+                }
+            }
         }
 
         Params::Decrypt(args) => {
@@ -204,8 +208,12 @@ fn main() {
                 println!("Output: {:#?}", output);
             }
 
-            utils::generate_decrypted_message(&message, &private_key, &signature, &output)
-                .expect("failed to encrypt message");
+            match utils::generate_decrypted_message(&message, &private_key, &signature, &output) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprint!("{}", err)
+                }
+            }
         }
 
         Params::Generate(args) => {
@@ -219,16 +227,35 @@ fn main() {
 
             println!("Generating private and public RSA keys...");
 
-            utils::generate_private_key(&output, bits).expect("failed to generate private key");
-            utils::generate_public_key(&output).expect("failed to generate public key");
+            match utils::generate_private_key(&output, bits) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprint!("{}", err)
+                }
+            }
+            match utils::generate_public_key(&output) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprint!("{}", err)
+                }
+            }
 
             println!("Saved {:?}", output.as_path());
             println!("Generating private and public signature keys...");
 
             let output_signature: PathBuf = utils::append_to_path(output, ".sig");
-            utils::generate_private_key(&output_signature, bits)
-                .expect("failed to generate private key");
-            utils::generate_public_key(&output_signature).expect("failed to generate public key");
+            match utils::generate_private_key(&output_signature, bits) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprint!("{}", err)
+                }
+            }
+            match utils::generate_public_key(&output_signature) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprint!("{}", err)
+                }
+            }
 
             println!("Saved {:?}", output_signature.as_path());
         }
