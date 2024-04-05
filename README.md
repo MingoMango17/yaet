@@ -21,27 +21,31 @@ Main repository is hosted on [Github](https://github.com/0x42697262/yaet).
 ## Building
 
 1. Clone the repository:
-```sh
-git clone https://github.com/0x42697262/yaet.git
+```
+$ git clone https://github.com/0x42697262/yaet.git
 ```
 
 2. Navigate to the project directory:
 
-```sh
-cd yaet
+```
+$ cd yaet
 ```
 
 3. Build the project:
 
-```sh
-cargo build --release
+```
+$ cargo build --release
 ```
 
 4. Run the executable:
 
-```sh
-./target/release/yaet --help
 ```
+$ ./target/release/yaet --help
+```
+
+## Documentation
+
+
 
 ## Usage
 
@@ -51,7 +55,7 @@ Sample keys and signatures are provided in the [examples](./examples/) directory
 
 To show the available commands, run
 
-```sh
+```
 $ yaet help
 ```
 
@@ -93,8 +97,8 @@ chicken.sig.pub
 
 It's possible to generate a key with shorthand method
 
-```sh
-yaet gen -o chicken
+```
+$ yaet gen -o chicken
 ```
 
 ### Encrypting messages
@@ -188,6 +192,15 @@ Za/jriEVJZvqA/jkM8zbhHpYIvw2CmFQ4WqK/J9rl9LY7qSIAT/qT/1DOKtfFTswHNO3nX1kK+cR
 qgbkS0S1ROHfkGpZNg==
 ```
 
+#### Saving to a file
+
+To save the encrypted message, simply append the `--output secret_message` parameter.
+
+If you want to save the file encoded in base64, try this.
+
+```
+$ yaet enc --public-key receiver.pub --signing-key chicken.sig message.txt | base64 > secretv2
+```
 
 ### Decrypting secret messages
 
