@@ -8,6 +8,8 @@ It provides a simple and secure way to protect sensitive data using asymmetric e
 > This tool is a prototype intended solely for educational purposes within the CMSC 134 Intro to Cybersecurity course.
 > It is not suitable for production use.
 
+Main repository is hosted on [Github](https://github.com/0x42697262/yaet).
+
 ## Features
 
 - [x] Generate new key pairs for encryption and signing.

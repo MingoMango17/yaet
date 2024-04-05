@@ -1,4 +1,4 @@
-use clap::{builder::PossibleValuesParser, Args, Parser};
+use clap::{builder::PossibleValuesParser, Parser};
 use std::path::PathBuf;
 
 mod utils;
@@ -44,7 +44,6 @@ struct Cli {
 ///
 #[derive(Parser, Debug)]
 enum Params {
-    Configure(ConfigureArgs),
     Decrypt(DecryptArgs),
     Encrypt(EncryptArgs),
     Generate(GenerateArgs),
@@ -54,7 +53,9 @@ enum Params {
 ///
 /// When encrypting a file, the following elements are required:
 ///
-/// - Public encryption key of the receiver: Essential for encrypting the message securely for the intended recipient.
+/// - Public key of the receiver: Essential for encrypting the message securely for the intended recipient.
+///
+/// - Private signature: Essential for providing integrity of the message.
 ///
 #[derive(Parser, Debug)]
 #[command(about = "Encrypt a message", visible_alias = "enc")]
@@ -63,44 +64,29 @@ struct EncryptArgs {
     ///
     /// You can provide a file path as the input source. Alternatively, you can directly pipe the output of another command to this argument.
     ///
-    ///
-    /// # Example
-    ///
-    /// ```bash
-    /// echo "Hello World" | yaet encrypt [...]
-    /// ```
-    ///
-    /// or
-    ///
-    /// ```bash
-    /// yaet encrypt ~/message.txt [...]
-    /// ```
-    ///
     #[arg()]
     file: Option<PathBuf>,
 
-    /// Your identification key.
+    /// The recipient's public RSA key.
     ///
-    /// This is your Privacy Enhanced Mail format private key which will be used for encrypting the
-    /// message.
+    /// The public key is used to encrypt the message.
     ///
-    #[arg(required = true, long, short = 'p')]
-    pem: PathBuf,
+    #[arg(required = true, long, short = 'p', visible_aliases = [ "public", "key", "pkey", "pk"])]
+    public_key: PathBuf,
 
-    /// The recipient's public identification key.
+    /// Your private key signature.
     ///
-    /// This is the recipient's Privacy Enhanced Mail format public key.
+    /// The private key signature is used for authenticity and integrity of your message.
     ///
-    #[arg(required = true, long, short = 'r')]
-    recipient: PathBuf,
+    #[arg(required = true, long, short = 's', visible_aliases = ["signature", "sig"])]
+    private_key_signature: PathBuf,
 
-    /// Skip signing of the encrypted message.
+    /// Output to a FILE
     ///
-    /// **WARNING: Disabling signing removes the authenticity assurance from the encrypted
-    /// message!**
+    /// Specify the file path for the output of the encrypted message.
     ///
-    #[arg(long, short = 'v')]
-    skip_verification: bool,
+    #[arg(long, short = 'o', visible_aliases = ["out"])]
+    output: Option<PathBuf>,
 }
 
 /// Specifies the arguments necessary for decrypting a message.
@@ -156,28 +142,6 @@ struct DecryptArgs {
     skip_verification: bool,
 }
 
-/// A subcommand for configuring settings
-///
-#[derive(Parser, Debug)]
-#[group(required = true, multiple = false)]
-#[command(about = "Configure settings")]
-struct ConfigureArgs {
-    /// Adds a new public key.
-    ///
-    /// This will add a new host to your `~/.keys/.known_hosts` file.
-    /// Use this argument multiple times to add multiple identification hosts.
-    ///
-    #[arg(long, short = 'a', value_delimiter = ',')]
-    add_host: Vec<String>,
-
-    /// Deletes all key pairs.
-    ///
-    /// This flag removes all private and public keys stored in the `~/.keys/` directory.
-    ///
-    #[arg(long, short = 'd')]
-    delete_all: bool,
-}
-
 /// Generate new keypairs for encryption and signing.
 ///
 /// This flag triggers the generation of two pairs of keys: one for encryption and one for verification.
@@ -197,7 +161,13 @@ struct GenerateArgs {
     output: PathBuf,
 
     /// Bit size
-    #[arg(long, short = 'b', default_value = "2048", value_parser = PossibleValuesParser::new(["1024", "2048", "4096"]))]
+    ///
+    /// Formula: ((Bits * 8) - (66 * 8)) / 8 = maximum characters
+    ///
+    /// With the default 1648 bits, the maximum characters allowed as input is 140 characters:
+    /// ((206*8) - (66*8)) / 8 = 140.
+    ///
+    #[arg(long, short = 'b', default_value = "1648", value_parser = PossibleValuesParser::new(["1024", "1648", "2048", "4096"]))]
     bits: String,
 }
 
@@ -205,27 +175,20 @@ fn main() {
     let cli: Cli = Cli::parse();
 
     match cli.param {
-        Params::Configure(args) => {
-            let delete_all = args.delete_all;
-            let add_host = args.add_host;
-
-            if cli.debug {
-                println!("Hosts: {:#?}", add_host);
-                println!("Delete All: {}", delete_all);
-            }
-        }
         Params::Encrypt(args) => {
             let message: String = utils::read_input(&args.file).unwrap();
-            let pem: PathBuf = args.pem; // probably not needed
-            let recipient: PathBuf = args.recipient;
-            let skip_verification: bool = args.skip_verification;
+            let public_key: PathBuf = args.public_key;
+            let signature: PathBuf = args.private_key_signature;
+            let output: PathBuf = args.output.unwrap_or_default();
 
             if cli.debug {
                 println!("Message: {:#?}", message);
-                println!("PEM: {:#?}", pem);
-                println!("RECIPIENT: {:#?}", recipient);
-                println!("Skip Verification: {:#?}", skip_verification);
+                println!("Public key: {:#?}", public_key);
+                println!("Signature: {:#?}", signature);
+                println!("Output: {:#?}", output);
             }
+            utils::generate_encrypted_message(&message, &public_key, &signature, &output)
+                .expect("failed to encrypt message");
         }
         Params::Decrypt(args) => {
             let message: String = utils::read_input(&args.file).unwrap();
