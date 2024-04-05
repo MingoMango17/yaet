@@ -102,19 +102,6 @@ struct DecryptArgs {
     ///
     /// You can provide a file path as the input source. Alternatively, you can directly pipe the output of another command to this argument.
     ///
-    ///
-    /// # Example
-    ///
-    /// ```bash
-    /// echo "Hello World" | yaet decrypt [...]
-    /// ```
-    ///
-    /// or
-    ///
-    /// ```bash
-    /// yaet decrypt ~/message.txt [...]
-    /// ```
-    ///
     #[arg()]
     file: Option<PathBuf>,
 
