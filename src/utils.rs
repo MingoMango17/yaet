@@ -1,3 +1,5 @@
+/// Helper functions are defined here.
+
 use pkcs8::DecodePublicKey;
 use rsa::sha2::Sha256;
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
@@ -330,6 +332,32 @@ pub fn decrypt_message_rsa_oaep(
     private_key.decrypt(padding, encrypted_message)
 }
 
+/// Signs a message using the RSASSA-PSS signature scheme with blinding for enhanced security.
+///
+/// # Arguments
+///
+/// * `key` - The private key used for signing the message.
+/// * `message` - The message to be signed, represented as a byte slice.
+///
+/// # Returns
+///
+/// The signature generated for the message.
+///
+/// # Examples
+///
+/// ```rust
+/// use rsa::{RsaPrivateKey, pss::Signature};
+/// use rand::rngs::OsRng;
+///
+/// // Generate or obtain the private key
+/// let private_key: RsaPrivateKey = /* Obtain the private key */;
+///
+/// // Define the message to be signed
+/// let message: &[u8] = /* Define the message */;
+///
+/// // Sign the message using RSASSA-PSS with blinding
+/// let signature: Signature = sign_message_with_rsassa_pss(private_key, message);
+/// ```
 pub fn sign_message_with_rsassa_pss(key: RsaPrivateKey, message: &[u8]) -> rsa::pss::Signature {
     let mut rng = rand::rngs::OsRng;
 
@@ -340,6 +368,40 @@ pub fn sign_message_with_rsassa_pss(key: RsaPrivateKey, message: &[u8]) -> rsa::
     signing_key.sign_with_rng(&mut rng, message)
 }
 
+/// Verifies the authenticity of a message using the RSASSA-PSS signature scheme.
+///
+/// # Arguments
+///
+/// * `key` - The public key used for verifying the signature.
+/// * `decrypted_message` - The decrypted message to be verified, represented as a byte slice.
+/// * `signature` - The signature to be verified.
+///
+/// # Returns
+///
+/// A result indicating the success or failure of the verification process.
+/// If the verification succeeds, returns `Ok()`. If it fails, returns an error of type `rsa::signature::Error`.
+///
+/// # Examples
+///
+/// ```rust
+/// use rsa::{RsaPublicKey, pss::Signature};
+///
+/// // Generate or obtain the public key
+/// let public_key: RsaPublicKey = /* Obtain the public key */;
+///
+/// // Define the decrypted message
+/// let decrypted_message: &[u8] = /* Define the decrypted message */;
+///
+/// // Define the signature to be verified
+/// let signature: Signature = /* Obtain the signature */;
+///
+/// // Verify the message authenticity using RSASSA-PSS
+/// let result = verify_message_with_rsassa_pss(public_key, decrypted_message, signature);
+/// match result {
+///     Ok(_) => println!("Message authenticity verified."),
+///     Err(e) => println!("Failed to verify message: {}", e),
+/// }
+/// ```
 pub fn verify_message_with_rsassa_pss(
     key: RsaPublicKey,
     decrypted_message: &[u8],

@@ -54,7 +54,7 @@ $ cargo run -- help
 
 ## Documentation
 
-
+Check the full documentation [here](https://0x42697262.github.io/yaet/yaet/).
 
 ## Usage
 
