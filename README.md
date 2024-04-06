@@ -17,6 +17,7 @@ Please see the [latest](https://github.com/0x42697262/yaet/releases/latest) rele
 - [x] Encrypt plaintext messages using RSA-OAEP encryption algorithm.
 - [x] Decrypt ciphertext messages using RSA-OAEP decryption algorithm.
 - [x] Verify the authenticity of encrypted messages through digital signatures.
+- [x] Works on emojis 👌
 - [ ] Can identify your mom
 
 ## Building
