@@ -287,6 +287,8 @@ Hello, There!
 **YAET** facilitates the generation of RSA key pairs, comprising both private and public keys.
 While having the flexibility to specify the size of the private keys: `1024 bits`, `1648 bits`, `2048 bits`, and `4096 bits`.
 By default, the YAET sets the key size to *1648 bits*, equivalent to *206 bytes*, a suitable choice to ensure compatibility with a maximum input limit of **140 characters**.
+The maximum bytes it can take is limited to 206 bytes because the default algorithm scheme (explained later on) for encryption is *66 bytes*.
+
 Upon generating the key pairs, YAET provides the option to either display the output on standard output or save it as a file.
 The private key file is named according to the provided filename, while the public key file appends `.pub` as its suffix for easy identification.
 
@@ -305,6 +307,8 @@ The encryption process requires the receiver's public key (for encryption) and t
 ### Signature
 
 YAET uses "blinded" RSASSA-PSS signatures by default outlined in [draft-irtf-cfrg-rsa-blind-signatures](https://datatracker.ietf.org/doc/draft-irtf-cfrg-rsa-blind-signatures/) for its integrity.
+Similarly with encryption process, the signature is also hashed with *SHA256*.
+
 The signature is appended to the encrypted message and concatenated together to form the complete message.
 This ensures that both the encrypted content and its corresponding signature are treated as a single entity, for convenient transmission and verification processes.
 
@@ -314,7 +318,7 @@ During the decryption process, the encrypted content is divided into two distinc
 This would require the sender's verification key (for integrity, which the key is publicly available) and the receiver's private key (for decryption).
 
 
-### Verfication
+### Verification
 
 During the decryption process, if the verification of the signature fails, the decrypted message contents will not be shown.
 This ensures that only authenticated and verified messages are presented to the user, maintaining the integrity and security of the communication.
@@ -325,11 +329,11 @@ Contributions are welcome! If you have any suggestions, bug reports, or feature 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/0x42697262/yaet/blob/main/LICENSE) file for details.
 
 ## Similar Projects
 
-- https://github.com/gebmecod/RSA-encryption - A quick and easy way to encrypt your data written in Python
-- https://github.com/sycasec/rsa_oaep - A more advanced set of features written in Python
-- https://github.com/kyle-gonzales/cmsc134mp2-diez_gonzales_pulvera - An attempt to build a chat app implemented in Python
-- https://github.com/GoodyCarlo/cmsc134-mp2 - Implements secure message encryption, signing, and decryption with detailed examples and explanations regarding threat vectors
+- [https://github.com/gebmecod/RSA-encryption](https://github.com/gebmecod/RSA-encryption) - A quick and easy way to encrypt your data written in Python
+- [https://github.com/sycasec/rsa_oaep](https://github.com/sycasec/rsa_oaep) - A more advanced set of features written in Python
+- [https://github.com/kyle-gonzales/cmsc134mp2-diez_gonzales_pulvera](https://github.com/kyle-gonzales/cmsc134mp2-diez_gonzales_pulvera) - An attempt to build a chat app implemented in Python
+- [https://github.com/GoodyCarlo/cmsc134-mp2](https://github.com/GoodyCarlo/cmsc134-mp2) - Implements secure message encryption, signing, and decryption with detailed examples and explanations regarding threat vectors

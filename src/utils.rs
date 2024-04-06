@@ -1,4 +1,8 @@
-/// Helper functions are defined here.
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
+
+//! Helper functions are defined here.
 use pkcs8::DecodePublicKey;
 use rsa::sha2::Sha256;
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
