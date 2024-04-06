@@ -288,7 +288,7 @@ Hello, There!
 **YAET** facilitates the generation of RSA key pairs, comprising both private and public keys.
 While having the flexibility to specify the size of the private keys: `1024 bits`, `1648 bits`, `2048 bits`, and `4096 bits`.
 By default, the YAET sets the key size to *1648 bits*, equivalent to *206 bytes*, a suitable choice to ensure compatibility with a maximum input limit of **140 characters**.
-The maximum bytes it can take is limited to 206 bytes because the default algorithm scheme (explained later on) for encryption is *66 bytes*.
+The maximum bytes it can take is limited to 206 bytes because the default algorithm scheme (see [`generate_private_key`] function) for encryption is *66 bytes*.
 
 Upon generating the key pairs, YAET provides the option to either display the output on standard output or save it as a file.
 The private key file is named according to the provided filename, while the public key file appends `.pub` as its suffix for easy identification.

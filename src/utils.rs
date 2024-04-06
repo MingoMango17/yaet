@@ -112,6 +112,34 @@ pub fn append_to_path(path: impl Into<OsString>, suffix: impl AsRef<OsStr>) -> P
 /// }
 ///  ```
 ///
+/// # Calculating Maximum Size of Plaintext
+///
+/// * Let `bits` be the size of the key
+/// * Let `hash_length` be the size of a hash function
+///
+/// To calculate the maximum size of a plaintext, we can use this general formula:
+///
+/// `max_size = (bits / 8) - ((hash_length * 2) / 8) - 2`
+///
+/// Thus, if we have 2048 bits that uses SHA256 the maximum size (character limit) of plaintext
+/// would be: `(2048 / 8) -((256 * 2) / 8) - 2 = 190` characters
+///
+/// To calculate how many bits are require to limit the plaintext characters into 140 using a hash function size of 256, we can solve
+/// that with the same formula.
+///
+/// ```
+/// (bits / 8) - ((256 * 2) / 8) - 2 = 140
+/// (bits / 8) - (64) - 2 = 140
+/// (bits / 8) - 66 = 140
+/// (bits / 8) = 140 + 66
+/// bits / 8 = 206
+/// bits = 206 * 8
+/// bits = 1648
+/// ```
+///
+///
+/// Hence, to constrain the size of plaintext characters to 140, a key length of 1648 bits is necessary.
+//
 pub fn generate_private_key(output: &PathBuf, bits: usize) -> Result<(), io::Error> {
     let mut rng = rand::rngs::OsRng;
     let private_key = match RsaPrivateKey::new(&mut rng, bits) {
