@@ -179,19 +179,19 @@ struct GenerateArgs {
 ///
 /// # Arguments
 ///
-/// - `cli`: An instance of the `Cli` struct containing parsed command line arguments.
+/// - `cli`: An instance of the [Cli][`Cli`] struct containing parsed command line arguments.
 ///
 /// # Command Handling
 ///
-/// The function matches the command specified in the `Params` enum and executes the corresponding logic:
+/// The function matches the command specified in the [Params][`Params`] enum and executes the corresponding logic:
 ///
-/// - **Encrypt**: Reads the input message from a file, encrypts it using the provided public key and signing key, and optionally saves the encrypted message to an output file.
-/// - **Decrypt**: Reads the encrypted message from a file, decrypts it using the provided private key and verifying key, and optionally saves the decrypted message to an output file. It also supports skipping signature verification if specified.
-/// - **Generate**: Generates private and public RSA key pairs and private and public signature key pairs, saving them to specified output files.
+/// - **[Encrypt][`EncryptArgs`]**: Reads the input message from a file, encrypts it using the provided public key and signing key, and optionally saves the encrypted message to an output file.
+/// - **[Decrypt][`DecryptArgs`]**: Reads the encrypted message from a file, decrypts it using the provided private key and verifying key, and optionally saves the decrypted message to an output file. It also supports skipping signature verification if specified.
+/// - **[Generate][`GenerateArgs`]**: Generates private and public RSA key pairs and private and public signature key pairs, saving them to specified output files.
 ///
 /// # Debug Mode
 ///
-/// If debug mode is enabled (`cli.debug`), the function prints debug information including input/output paths and skip verification flag.
+/// If debug mode is enabled ([cli.debug][`Cli::debug`]), the function prints debug information including input/output paths and skip verification flag.
 ///
 /// # Errors
 ///
@@ -217,9 +217,7 @@ fn main() {
             let raw_message: &[u8] = message.as_bytes();
             match utils::generate_encrypted_message(raw_message, &public_key, &signature, &output) {
                 Ok(_) => {}
-                Err(err) => {
-                    eprint!("{}", err);
-                }
+                Err(err) => eprint!("{}", err),
             }
         }
 
@@ -246,9 +244,7 @@ fn main() {
                 skip_verification,
             ) {
                 Ok(_) => {}
-                Err(err) => {
-                    eprint!("{}", err)
-                }
+                Err(err) => eprint!("{}", err),
             }
         }
 
@@ -265,15 +261,11 @@ fn main() {
 
             match utils::generate_private_key(&output, bits) {
                 Ok(_) => {}
-                Err(err) => {
-                    eprint!("{}", err)
-                }
+                Err(err) => eprint!("{}", err),
             }
             match utils::generate_public_key(&output) {
                 Ok(_) => {}
-                Err(err) => {
-                    eprint!("{}", err)
-                }
+                Err(err) => eprint!("{}", err),
             }
 
             println!("Saved {:?}", output.as_path());
@@ -282,15 +274,11 @@ fn main() {
             let output_signature: PathBuf = utils::append_to_path(output, ".sig");
             match utils::generate_private_key(&output_signature, bits) {
                 Ok(_) => {}
-                Err(err) => {
-                    eprint!("{}", err)
-                }
+                Err(err) => eprint!("{}", err),
             }
             match utils::generate_public_key(&output_signature) {
                 Ok(_) => {}
-                Err(err) => {
-                    eprint!("{}", err)
-                }
+                Err(err) => eprint!("{}", err),
             }
 
             println!("Saved {:?}", output_signature.as_path());
